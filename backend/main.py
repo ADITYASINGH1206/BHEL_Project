@@ -1,11 +1,14 @@
 import os
+from pathlib import Path
+# pyrefly: ignore [missing-import]
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 app = FastAPI(title="MITS Results API")
 
@@ -19,8 +22,8 @@ app.add_middleware(
 )
 
 def get_google_sheet():
-    credentials_file = "service-account.json"
-    if not os.path.exists(credentials_file):
+    credentials_file = BASE_DIR / "service-account.json"
+    if not credentials_file.exists():
         return None
     
     scope = [
