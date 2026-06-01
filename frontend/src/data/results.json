@@ -1,0 +1,14 @@
+[
+  { "enrollment": "BTAD24O1001", "name": "Aditya Singh", "branch": "BTAD", "semester": 4, "sgpa": 8.5, "cgpa": 8.2, "status": "Pass" },
+  { "enrollment": "BTAD24O1002", "name": "Rahul Verma", "branch": "BTAD", "semester": 4, "sgpa": 7.8, "cgpa": 7.5, "status": "Pass" },
+  { "enrollment": "BTAM24O1022", "name": "Snehil Sharma", "branch": "BTAM", "semester": 4, "sgpa": 6.2, "cgpa": 6.0, "status": "Pass" },
+  { "enrollment": "BTAM24O1023", "name": "Devang Patel", "branch": "BTAM", "semester": 4, "sgpa": 8.61, "cgpa": 8.0, "status": "Pass" },
+  { "enrollment": "BTAI24O1005", "name": "Karan Kumar", "branch": "BTAI", "semester": 4, "sgpa": 9.1, "cgpa": 8.8, "status": "Pass" },
+  { "enrollment": "BTAD24O1003", "name": "Riya Singh", "branch": "BTAD", "semester": 4, "sgpa": 4.5, "cgpa": 5.1, "status": "Fail" },
+  { "enrollment": "BTAM24O1024", "name": "Devansh Kulmi", "branch": "BTAM", "semester": 4, "sgpa": 6.61, "cgpa": 6.5, "status": "Pass" },
+  { "enrollment": "BTAI24O1006", "name": "Sneha Gupta", "branch": "BTAI", "semester": 4, "sgpa": 7.2, "cgpa": 7.0, "status": "Pass" },
+  { "enrollment": "BTAD24O1004", "name": "Vikram Singh", "branch": "BTAD", "semester": 4, "sgpa": 8.9, "cgpa": 8.6, "status": "Pass" },
+  { "enrollment": "BTAM24O1026", "name": "Dishant Patidar", "branch": "BTAM", "semester": 4, "sgpa": 6.96, "cgpa": 7.1, "status": "Pass" },
+  { "enrollment": "BTAM24O1027", "name": "Gourav Baghel", "branch": "BTAM", "semester": 4, "sgpa": 8.22, "cgpa": 8.0, "status": "Pass" },
+  { "enrollment": "BTAM24O1028", "name": "Gourav Kushwah", "branch": "BTAM", "semester": 4, "sgpa": 6.57, "cgpa": 6.3, "status": "Pass" }
+]

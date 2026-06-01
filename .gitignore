@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Environment Variables & Secrets
+.env
+service-account.json
+config.json
+
+# Node.js & React (Frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.eslintcache
+frontend/coverage/
+
+# Misc
+.vscode/
+.DS_Store
+debug_captcha.png
+*.log
+data/html_dumps/
+data/screenshots/
+
+# Machine Learning Models
+scraper/trocr_model/
+*.pt
+*.onnx
+*.h5
