@@ -18,10 +18,12 @@ def run_scraper(semester=None, branch=None, start=None, end=None):
         scraper.logger.info(f"Orchestrator overridden target semester to: {semester}")
         
     if branch and branch != "All":
-        # Keep only the targeted branch
-        scraper.config["branches"] = [b for b in scraper.config["branches"] if b["name"] == branch]
+        # Parse comma-separated branches
+        target_branches = [b.strip() for b in branch.split(",")]
+        # Keep only the targeted branches
+        scraper.config["branches"] = [b for b in scraper.config["branches"] if b["name"] in target_branches]
         if not scraper.config["branches"]:
-            scraper.logger.error(f"Branch '{branch}' not found in config.json. Aborting.")
+            scraper.logger.error(f"None of the branches {target_branches} were found in config.json. Aborting.")
             return
             
     if start is not None and end is not None:

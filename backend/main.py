@@ -60,9 +60,12 @@ manager = ConnectionManager()
 # --- Models ---
 class ScraperRequest(BaseModel):
     semester: int
-    branch: Optional[str] = "All"
+    branches: List[str] = ["All"]
     start_index: Optional[int] = None
     end_index: Optional[int] = None
+
+class LoginRequest(BaseModel):
+    password: str
 
 # --- Helper Functions ---
 def get_google_sheet():
@@ -91,7 +94,7 @@ def run_scraper_task(payload: ScraperRequest, loop: asyncio.AbstractEventLoop):
     """Background task to run the scraper synchronously using threads to avoid Windows asyncio bugs."""
     try:
         asyncio.run_coroutine_threadsafe(
-            manager.broadcast(f"[SYSTEM] Starting scraper for semester {payload.semester}, branch {payload.branch}..."),
+            manager.broadcast(f"[SYSTEM] Starting scraper for semester {payload.semester}, branches {', '.join(payload.branches)}..."),
             loop
         )
         
@@ -100,23 +103,27 @@ def run_scraper_task(payload: ScraperRequest, loop: asyncio.AbstractEventLoop):
         python_exe = str(venv_python) if venv_python.exists() else sys.executable
         
         cmd = [python_exe, "-u", "main.py", "--semester", str(payload.semester)]
-        if payload.branch and payload.branch != "All":
-            cmd.extend(["--branch", payload.branch])
+        if payload.branches and "All" not in payload.branches:
+            cmd.extend(["--branch", ",".join(payload.branches)])
         if payload.start_index is not None:
             cmd.extend(["--start", str(payload.start_index)])
         if payload.end_index is not None:
             cmd.extend(["--end", str(payload.end_index)])
 
+        kwargs = {
+            "stdout": subprocess.PIPE,
+            "stderr": subprocess.PIPE,
+            "cwd": BASE_DIR,
+            "text": True,
+            "encoding": 'utf-8',
+            "errors": 'replace'
+        }
+
+        if sys.platform == 'win32':
+            kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+
         # Spawn the process synchronously
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=BASE_DIR,
-            text=True,
-            encoding='utf-8',
-            errors='replace'
-        )
+        process = subprocess.Popen(cmd, **kwargs)
         scraper_state.process = process
 
         def read_stream(stream, prefix):
@@ -176,6 +183,14 @@ def get_results():
 # pyrefly: ignore [missing-import]
 from fastapi import BackgroundTasks
 
+@app.post("/api/login")
+def login(payload: LoginRequest):
+    """Simple password authentication for the Admin Dashboard."""
+    expected_password = os.getenv("ADMIN_PASSWORD", "admin123")
+    if payload.password == expected_password:
+        return {"status": "success", "token": "authenticated"}
+    raise HTTPException(status_code=401, detail="Invalid password.")
+
 @app.post("/api/run-scraper")
 async def run_scraper(payload: ScraperRequest, background_tasks: BackgroundTasks):
     """Spins up the Python scraper asynchronously."""
@@ -188,12 +203,16 @@ async def run_scraper(payload: ScraperRequest, background_tasks: BackgroundTasks
 
 @app.post("/api/stop-scraper")
 async def stop_scraper():
-    """Terminates the running scraper process."""
+    """Terminates the running scraper process and its children."""
     if not scraper_state.process or scraper_state.process.poll() is not None:
         raise HTTPException(status_code=400, detail="Scraper is not running.")
 
-    scraper_state.process.terminate()
-    await manager.broadcast("[SYSTEM] Scraper termination signal sent.")
+    if sys.platform == 'win32':
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(scraper_state.process.pid)], capture_output=True)
+    else:
+        scraper_state.process.terminate()
+
+    await manager.broadcast("[SYSTEM] Scraper terminated by administrator.")
     return {"status": "terminated"}
 
 @app.get("/api/status")
