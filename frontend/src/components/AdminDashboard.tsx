@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const cleanApiBase = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+const WS_BASE = cleanApiBase.replace(/^http/, 'ws');
+
 const AdminDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -31,7 +35,7 @@ const AdminDashboard = () => {
     
     const checkStatus = async () => {
       try {
-        const res = await axios.get('http://localhost:8000/api/status');
+        const res = await axios.get(`${cleanApiBase}/api/status`);
         setIsRunning(res.data.is_running);
       } catch (e) {
         // Ignored
@@ -40,7 +44,7 @@ const AdminDashboard = () => {
     checkStatus();
 
     const connectWs = () => {
-      const ws = new WebSocket('ws://localhost:8000/ws/logs');
+      const ws = new WebSocket(`${WS_BASE}/ws/logs`);
       ws.onopen = () => setTerminalLogs(prev => [...prev, '[WS] Connected to Server WebSocket']);
       ws.onmessage = (event) => {
         const message = event.data;
@@ -65,7 +69,7 @@ const AdminDashboard = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8000/api/login', { password });
+      await axios.post(`${cleanApiBase}/api/login`, { password });
       setIsAuthenticated(true);
       setLoginError('');
     } catch (err: any) {
@@ -89,7 +93,7 @@ const AdminDashboard = () => {
   const startScraper = async () => {
     try {
       setIsRunning(true);
-      await axios.post('http://localhost:8000/api/run-scraper', { 
+      await axios.post(`${cleanApiBase}/api/run-scraper`, { 
         semester: targetSemester,
         prefixes: selectedPrefixes,
         start_index: startIndex !== '' ? Number(startIndex) : null,
@@ -103,7 +107,7 @@ const AdminDashboard = () => {
 
   const stopScraper = async () => {
     try {
-      await axios.post('http://localhost:8000/api/stop-scraper');
+      await axios.post(`${cleanApiBase}/api/stop-scraper`);
       setTerminalLogs(prev => [...prev, `[SYSTEM] Stop request sent to API.`]);
       setIsRunning(false);
     } catch (err: any) {

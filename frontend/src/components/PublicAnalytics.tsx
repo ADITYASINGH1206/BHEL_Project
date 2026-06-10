@@ -2,6 +2,10 @@ import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const cleanApiBase = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+
+
 interface StudentData {
   enrollment: string;
   name: string;
@@ -35,7 +39,7 @@ const PublicAnalytics = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:8000/api/data');
+        const response = await axios.get(`${cleanApiBase}/api/data`);
         if (response.data.error) {
            setError(response.data.error);
            return;
