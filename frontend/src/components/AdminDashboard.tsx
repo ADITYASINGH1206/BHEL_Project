@@ -8,8 +8,8 @@ const AdminDashboard = () => {
   const [loginError, setLoginError] = useState('');
   
   const [targetSemester, setTargetSemester] = useState<number>(5);
-  const [selectedBranches, setSelectedBranches] = useState<string[]>(['CSE', 'IT', 'AIML']);
-  const [branchInput, setBranchInput] = useState('');
+  const [selectedPrefixes, setSelectedPrefixes] = useState<string[]>(['BTAD24O']);
+  const [prefixInput, setPrefixInput] = useState('');
   
   const [startIndex, setStartIndex] = useState<number | ''>('');
   const [endIndex, setEndIndex] = useState<number | ''>('');
@@ -42,7 +42,13 @@ const AdminDashboard = () => {
     const connectWs = () => {
       const ws = new WebSocket('ws://localhost:8000/ws/logs');
       ws.onopen = () => setTerminalLogs(prev => [...prev, '[WS] Connected to Server WebSocket']);
-      ws.onmessage = (event) => setTerminalLogs(prev => [...prev, event.data]);
+      ws.onmessage = (event) => {
+        const message = event.data;
+        setTerminalLogs(prev => [...prev, message]);
+        if (message.includes('[SYSTEM] Scraper finished') || message.includes('[SYSTEM] Scraper terminated') || message.includes('[ERROR] Fatal background task error')) {
+          setIsRunning(false);
+        }
+      };
       ws.onclose = () => {
         setTerminalLogs(prev => [...prev, '[WS] Connection closed. Reconnecting in 5s...']);
         setTimeout(connectWs, 5000);
@@ -67,27 +73,17 @@ const AdminDashboard = () => {
     }
   };
 
-  const addBranch = () => {
-    const cleanBranch = branchInput.trim().toUpperCase();
-    if (!cleanBranch) return;
-    if (selectedBranches.includes(cleanBranch)) return;
+  const addPrefix = () => {
+    const cleanPrefix = prefixInput.trim().toUpperCase();
+    if (!cleanPrefix) return;
+    if (selectedPrefixes.includes(cleanPrefix)) return;
     
-    if (cleanBranch === 'ALL') {
-      setSelectedBranches(['All']);
-    } else {
-      setSelectedBranches(prev => {
-        const withoutAll = prev.filter(b => b !== 'All');
-        return [...withoutAll, cleanBranch];
-      });
-    }
-    setBranchInput('');
+    setSelectedPrefixes(prev => [...prev, cleanPrefix]);
+    setPrefixInput('');
   };
 
-  const removeBranch = (branch: string) => {
-    setSelectedBranches(prev => {
-      const updated = prev.filter(b => b !== branch);
-      return updated.length === 0 ? ['All'] : updated;
-    });
+  const removePrefix = (prefix: string) => {
+    setSelectedPrefixes(prev => prev.filter(p => p !== prefix));
   };
 
   const startScraper = async () => {
@@ -95,7 +91,7 @@ const AdminDashboard = () => {
       setIsRunning(true);
       await axios.post('http://localhost:8000/api/run-scraper', { 
         semester: targetSemester,
-        branches: selectedBranches,
+        prefixes: selectedPrefixes,
         start_index: startIndex !== '' ? Number(startIndex) : null,
         end_index: endIndex !== '' ? Number(endIndex) : null
       });
@@ -109,6 +105,7 @@ const AdminDashboard = () => {
     try {
       await axios.post('http://localhost:8000/api/stop-scraper');
       setTerminalLogs(prev => [...prev, `[SYSTEM] Stop request sent to API.`]);
+      setIsRunning(false);
     } catch (err: any) {
       setTerminalLogs(prev => [...prev, `[API ERROR] Failed to stop: ${err.response?.data?.detail || err.message}`]);
     }
@@ -247,22 +244,22 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Row 2: Branch Tags */}
+              {/* Row 2: Prefix Tags */}
               <div>
-                <label className="block font-label-caps text-[12px] text-on-surface-variant uppercase mb-xs font-bold">Target Branches</label>
+                <label className="block font-label-caps text-[12px] text-on-surface-variant uppercase mb-xs font-bold">Enrollment Prefixes</label>
                 <div className="flex gap-sm mb-sm">
                   <input 
                     type="text"
                     className="flex-1 bg-surface border border-outline-variant rounded px-md py-sm font-body-sm text-[14px] text-on-surface focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-colors" 
-                    placeholder="e.g., CSE, IT, EE..." 
-                    value={branchInput}
-                    onChange={(e) => setBranchInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && addBranch()}
+                    placeholder="e.g., BTAD24O, BTAM24O..." 
+                    value={prefixInput}
+                    onChange={(e) => setPrefixInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addPrefix()}
                     disabled={isRunning}
                   />
                   <button 
-                    onClick={addBranch}
-                    disabled={isRunning || !branchInput.trim()}
+                    onClick={addPrefix}
+                    disabled={isRunning || !prefixInput.trim()}
                     className="bg-surface-variant text-on-surface rounded px-md py-sm font-label-caps text-[12px] hover:bg-surface-container-highest transition-colors flex items-center gap-xs font-bold" 
                     type="button"
                   >
@@ -271,10 +268,10 @@ const AdminDashboard = () => {
                 </div>
                 {/* Chips */}
                 <div className="flex flex-wrap gap-sm mt-xs">
-                  {selectedBranches.map(branch => (
-                    <div key={branch} className="bg-secondary/10 text-secondary border border-secondary/20 rounded-full pl-md pr-xs py-[2px] flex items-center gap-xs font-label-caps text-[12px] font-bold">
-                      {branch}
-                      <button onClick={() => removeBranch(branch)} disabled={isRunning} className="hover:bg-secondary/20 rounded-full p-[2px] transition-colors" type="button">
+                  {selectedPrefixes.map(prefix => (
+                    <div key={prefix} className="bg-secondary/10 text-secondary border border-secondary/20 rounded-full pl-md pr-xs py-[2px] flex items-center gap-xs font-label-caps text-[12px] font-bold">
+                      {prefix}
+                      <button onClick={() => removePrefix(prefix)} disabled={isRunning} className="hover:bg-secondary/20 rounded-full p-[2px] transition-colors" type="button">
                         <span className="material-symbols-outlined text-[14px]">close</span>
                       </button>
                     </div>

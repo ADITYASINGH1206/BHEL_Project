@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 interface StudentData {
   enrollment: string;
@@ -17,12 +17,19 @@ const PublicAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
+  // Filters and Sorting
   const [branchFilter, setBranchFilter] = useState('All');
   const [semesterFilter, setSemesterFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: keyof StudentData; direction: 'asc' | 'desc' }>({ key: 'sgpa', direction: 'desc' });
 
-  // Dropdown states for mobile UI simulation (though here we can just use normal selects if preferred, but we will adapt to design)
+  const requestSort = (key: keyof StudentData) => {
+    let direction: 'asc' | 'desc' = 'desc';
+    if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,15 +61,28 @@ const PublicAnalytics = () => {
   }, []);
 
   const filteredData = useMemo(() => {
-    return rawData.filter(student => {
+    let data = rawData.filter(student => {
       const matchBranch = branchFilter === 'All' || student.branch === branchFilter;
       const matchSemester = semesterFilter === 'All' || student.semester === semesterFilter;
       const searchLower = searchQuery.toLowerCase();
       const matchSearch = student.name.toLowerCase().includes(searchLower) || 
                           student.enrollment.toLowerCase().includes(searchLower);
       return matchBranch && matchSemester && matchSearch;
-    }).sort((a, b) => b.sgpa - a.sgpa);
-  }, [rawData, branchFilter, semesterFilter, searchQuery]);
+    });
+
+    data.sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return data;
+  }, [rawData, branchFilter, semesterFilter, searchQuery, sortConfig]);
+
+  const uniqueBranches = useMemo(() => Array.from(new Set(rawData.map(d => d.branch))), [rawData]);
+  const uniqueSemesters = useMemo(() => Array.from(new Set(rawData.map(d => d.semester))), [rawData]);
 
   const totalStudents = filteredData.length;
   const avgSgpa = totalStudents > 0 ? (filteredData.reduce((acc, curr) => acc + curr.sgpa, 0) / totalStudents).toFixed(2) : '0.00';
@@ -109,6 +129,30 @@ const PublicAnalytics = () => {
       students: bins[key as keyof typeof bins]
     }));
   }, [filteredData]);
+
+  // Scatter Chart Data for Individual Performance
+  const scatterData = useMemo(() => {
+    return filteredData.map((student, index) => ({
+      index,
+      sgpa: student.sgpa,
+      name: student.name,
+      branch: student.branch,
+    }));
+  }, [filteredData]);
+
+  const CustomScatterTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-surface-bright border border-outline-variant p-sm rounded shadow-sm">
+          <p className="font-semibold text-on-surface text-[14px]">{data.name}</p>
+          <p className="text-[12px] text-on-surface-variant">{data.branch}</p>
+          <p className="text-[12px] font-bold text-secondary mt-1">SGPA: {data.sgpa}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="bg-background text-on-background min-h-screen pb-[80px] md:pb-0 font-body-md">
@@ -185,7 +229,7 @@ const PublicAnalytics = () => {
             </section>
 
             {/* Middle Section: Charts */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-md md:gap-gutter">
+            <section className="grid grid-cols-1 gap-md md:gap-gutter">
               {/* Bar Chart */}
               <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm">
                 <h3 className="font-body-lg text-[18px] text-on-surface mb-lg border-b border-outline-variant/50 pb-sm">SGPA Distribution</h3>
@@ -220,19 +264,20 @@ const PublicAnalytics = () => {
                 </div>
               </div>
 
-              {/* Bar Chart (Recharts) */}
+              {/* Individual Performance Cloud (ScatterChart) */}
               <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm relative overflow-hidden flex flex-col">
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-surface-variant/20 pointer-events-none"></div>
-                <h3 className="font-body-lg text-[18px] text-on-surface mb-md border-b border-outline-variant/50 pb-sm relative z-10">SGPA Frequency</h3>
-                <div className="flex-1 w-full relative z-10 min-h-[250px]">
+                <h3 className="font-body-lg text-[18px] text-on-surface mb-md border-b border-outline-variant/50 pb-sm relative z-10">Individual Performance Cloud</h3>
+                <div className="flex-1 w-full relative z-10 min-h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={sgpaDistribution} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={false} />
-                      <XAxis dataKey="range" stroke="var(--color-on-surface-variant)" tick={{ fontSize: 12 }} />
-                      <YAxis allowDecimals={false} stroke="var(--color-on-surface-variant)" tick={{ fontSize: 12 }} />
-                      <Tooltip cursor={{ fill: 'var(--color-surface-container-high)' }} contentStyle={{ backgroundColor: 'var(--color-surface-bright)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }} itemStyle={{ color: 'var(--color-secondary)' }} />
-                      <Bar dataKey="students" fill="var(--color-secondary)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
+                      <XAxis type="number" dataKey="index" name="Student ID" stroke="var(--color-on-surface-variant)" tick={false} axisLine={false} />
+                      <YAxis type="number" dataKey="sgpa" name="SGPA" domain={[4, 10]} stroke="var(--color-on-surface-variant)" tick={{ fontSize: 12 }} />
+                      <ZAxis range={[30, 30]} />
+                      <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomScatterTooltip />} />
+                      <Scatter name="Students" data={scatterData} fill="var(--color-primary)" opacity={0.7} />
+                    </ScatterChart>
                   </ResponsiveContainer>
                 </div>
               </div>
@@ -241,38 +286,58 @@ const PublicAnalytics = () => {
             {/* Bottom Section: Leaderboard Table */}
             <section className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm mt-4">
               <div className="p-md border-b border-outline-variant bg-surface-bright flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h3 className="font-headline-md text-[20px] text-on-surface">Student Leaderboard</h3>
-                <div className="flex items-center bg-background border border-outline-variant rounded-lg px-3 py-1 w-full md:w-64">
-                  <span className="material-symbols-outlined text-on-surface-variant text-[18px] mr-2">search</span>
-                  <input
-                    type="text"
-                    placeholder="Search by name or enrollment..."
-                    className="bg-transparent border-none outline-none text-on-surface text-[14px] w-full"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+                <h3 className="font-headline-md text-[20px] text-on-surface whitespace-nowrap">Student Leaderboard</h3>
+                <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
+                  <select 
+                    className="bg-background border border-outline-variant rounded-lg px-3 py-1 w-full md:w-auto text-on-surface text-[14px] outline-none focus:border-secondary"
+                    value={branchFilter}
+                    onChange={(e) => setBranchFilter(e.target.value)}
+                  >
+                    <option value="All">All Branches</option>
+                    {uniqueBranches.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                  <select 
+                    className="bg-background border border-outline-variant rounded-lg px-3 py-1 w-full md:w-auto text-on-surface text-[14px] outline-none focus:border-secondary"
+                    value={semesterFilter}
+                    onChange={(e) => setSemesterFilter(e.target.value)}
+                  >
+                    <option value="All">All Semesters</option>
+                    {uniqueSemesters.map(s => <option key={s} value={s}>Semester {s}</option>)}
+                  </select>
+                  <div className="flex items-center bg-background border border-outline-variant rounded-lg px-3 py-1 w-full md:w-64">
+                    <span className="material-symbols-outlined text-on-surface-variant text-[18px] mr-2">search</span>
+                    <input
+                      type="text"
+                      placeholder="Search by name or enrollment..."
+                      className="bg-transparent border-none outline-none text-on-surface text-[14px] w-full"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
                     <tr className="border-b border-outline-variant bg-surface/50 text-on-surface-variant font-label-caps text-[12px] uppercase tracking-wider">
-                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group">
-                        <div className="flex items-center gap-xs">Enrollment <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_downward</span></div>
+                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group select-none" onClick={() => requestSort('enrollment')}>
+                        <div className="flex items-center gap-xs">Enrollment <span className={`material-symbols-outlined text-[14px] ${sortConfig.key === 'enrollment' ? 'opacity-100 text-secondary' : 'opacity-0 group-hover:opacity-50'} transition-all`}>{sortConfig.key === 'enrollment' && sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span></div>
                       </th>
-                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group">
-                        <div className="flex items-center gap-xs">Name <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_downward</span></div>
+                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group select-none" onClick={() => requestSort('name')}>
+                        <div className="flex items-center gap-xs">Name <span className={`material-symbols-outlined text-[14px] ${sortConfig.key === 'name' ? 'opacity-100 text-secondary' : 'opacity-0 group-hover:opacity-50'} transition-all`}>{sortConfig.key === 'name' && sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span></div>
                       </th>
-                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group">
-                        <div className="flex items-center gap-xs">Branch <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_downward</span></div>
+                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group select-none" onClick={() => requestSort('branch')}>
+                        <div className="flex items-center gap-xs">Branch <span className={`material-symbols-outlined text-[14px] ${sortConfig.key === 'branch' ? 'opacity-100 text-secondary' : 'opacity-0 group-hover:opacity-50'} transition-all`}>{sortConfig.key === 'branch' && sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span></div>
                       </th>
-                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group">
-                        <div className="flex items-center gap-xs">SGPA <span className="material-symbols-outlined text-[14px] opacity-100">arrow_downward</span></div>
+                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group select-none" onClick={() => requestSort('sgpa')}>
+                        <div className="flex items-center gap-xs">SGPA <span className={`material-symbols-outlined text-[14px] ${sortConfig.key === 'sgpa' ? 'opacity-100 text-secondary' : 'opacity-0 group-hover:opacity-50'} transition-all`}>{sortConfig.key === 'sgpa' && sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span></div>
                       </th>
-                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group">
-                        <div className="flex items-center gap-xs">CGPA <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_downward</span></div>
+                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group select-none" onClick={() => requestSort('cgpa')}>
+                        <div className="flex items-center gap-xs">CGPA <span className={`material-symbols-outlined text-[14px] ${sortConfig.key === 'cgpa' ? 'opacity-100 text-secondary' : 'opacity-0 group-hover:opacity-50'} transition-all`}>{sortConfig.key === 'cgpa' && sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span></div>
                       </th>
-                      <th className="p-md">Status</th>
+                      <th className="p-md cursor-pointer hover:bg-surface-variant transition-colors group select-none" onClick={() => requestSort('status')}>
+                        <div className="flex items-center gap-xs">Status <span className={`material-symbols-outlined text-[14px] ${sortConfig.key === 'status' ? 'opacity-100 text-secondary' : 'opacity-0 group-hover:opacity-50'} transition-all`}>{sortConfig.key === 'status' && sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span></div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="font-body-sm text-[14px] text-on-surface">

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # Ensure the root directory is in the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def run_scraper(semester=None, branch=None, start=None, end=None):
+def run_scraper(semester=None, branch=None, prefix=None, start=None, end=None):
     """Initializes and executes the MitsScraper."""
     from scraper.scraper import MitsScraper
     
@@ -17,7 +17,20 @@ def run_scraper(semester=None, branch=None, start=None, end=None):
         scraper.semester = semester
         scraper.logger.info(f"Orchestrator overridden target semester to: {semester}")
         
-    if branch and branch != "All":
+    if prefix:
+        target_prefixes = [p.strip() for p in prefix.split(",")]
+        new_branches = []
+        for p in target_prefixes:
+            new_branches.append({
+                "name": p,
+                "prefix": p,
+                "year_code": "",
+                "start_range": start if start else 1001,
+                "end_range": end if end else 1070
+            })
+        scraper.config["branches"] = new_branches
+        scraper.logger.info(f"Orchestrator overridden target prefixes to: {target_prefixes}")
+    elif branch and branch != "All":
         # Parse comma-separated branches
         target_branches = [b.strip() for b in branch.split(",")]
         # Keep only the targeted branches
@@ -43,17 +56,18 @@ def run_scraper(semester=None, branch=None, start=None, end=None):
         if hasattr(scraper, 'driver') and scraper.driver:
             scraper.driver.quit()
 
-def step_scrape(semester=None, branch=None, start=None, end=None):
+def step_scrape(semester=None, branch=None, prefix=None, start=None, end=None):
     """Pipeline Step: Executes the web scraping data collection phase."""
     print("==========================================")
     print("  PIPELINE STEP: Web Scraping & OCR")
     print("==========================================")
-    run_scraper(semester=semester, branch=branch, start=start, end=end)
+    run_scraper(semester=semester, branch=branch, prefix=prefix, start=start, end=end)
 
 def main():
     parser = argparse.ArgumentParser(description="MITS University Data Pipeline Orchestrator")
     parser.add_argument('--semester', type=str, default=None, help="Specify the semester target, e.g., 4")
     parser.add_argument('--branch', type=str, default=None, help="Target a specific branch or 'All'")
+    parser.add_argument('--prefix', type=str, default=None, help="Target a specific prefix (e.g., BTAD24O)")
     parser.add_argument('--start', type=int, default=None, help="Start index for enrollment numbers")
     parser.add_argument('--end', type=int, default=None, help="End index for enrollment numbers")
     args = parser.parse_args()
@@ -67,6 +81,7 @@ def main():
     step_scrape(
         semester=semester,
         branch=args.branch,
+        prefix=args.prefix,
         start=args.start,
         end=args.end
     )

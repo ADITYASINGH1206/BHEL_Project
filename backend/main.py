@@ -60,6 +60,7 @@ manager = ConnectionManager()
 # --- Models ---
 class ScraperRequest(BaseModel):
     semester: int
+    prefixes: List[str] = []
     branches: List[str] = ["All"]
     start_index: Optional[int] = None
     end_index: Optional[int] = None
@@ -103,7 +104,9 @@ def run_scraper_task(payload: ScraperRequest, loop: asyncio.AbstractEventLoop):
         python_exe = str(venv_python) if venv_python.exists() else sys.executable
         
         cmd = [python_exe, "-u", "main.py", "--semester", str(payload.semester)]
-        if payload.branches and "All" not in payload.branches:
+        if payload.prefixes:
+            cmd.extend(["--prefix", ",".join(payload.prefixes)])
+        elif payload.branches and "All" not in payload.branches:
             cmd.extend(["--branch", ",".join(payload.branches)])
         if payload.start_index is not None:
             cmd.extend(["--start", str(payload.start_index)])
