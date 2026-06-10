@@ -9,7 +9,6 @@ env/
 # Environment Variables & Secrets
 .env
 service-account.json
-config.json
 
 # Node.js & React (Frontend)
 frontend/node_modules/

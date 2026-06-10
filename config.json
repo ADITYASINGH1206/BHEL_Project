@@ -1,0 +1,30 @@
+{
+  "semester": 4,
+  "urls": {
+    "program_select": "https://iums.mitsgwalior.in/Result/ProgramSelect.aspx",
+    "result_page": "https://iums.mitsgwalior.in/Result/Result_BTech.aspx"
+  },
+  "branches": [
+    {
+      "name": "BTAD",
+      "prefix": "BTAD",
+      "year_code": "24O",
+      "start_range": 1001,
+      "end_range": 1070
+    },
+    {
+      "name": "BTAM",
+      "prefix": "BTAM",
+      "year_code": "24O",
+      "start_range": 1001,
+      "end_range": 1070
+    },
+    {
+      "name": "BTAI",
+      "prefix": "BTAI",
+      "year_code": "24O",
+      "start_range": 1001,
+      "end_range": 1070
+    }
+  ]
+}
