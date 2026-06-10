@@ -160,28 +160,26 @@ const PublicAnalytics = () => {
       <header className="bg-surface dark:bg-surface-dim text-primary dark:text-primary-fixed-dim w-full top-0 sticky shadow-sm border-b border-outline-variant dark:border-secondary-container z-40">
         <div className="flex justify-between items-center px-sm py-xs w-full max-w-full lg:max-w-[1280px] mx-auto lg:px-lg">
           <div className="flex items-center gap-sm">
-            <span className="material-symbols-outlined text-primary dark:text-primary-fixed-dim p-sm rounded-full hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors cursor-pointer active:scale-95 duration-150">account_balance</span>
+            <img src="/mits.png" className="w-8 h-8 object-contain" alt="MITS Logo" />
             <h1 className="font-headline-md text-[24px] font-bold text-primary dark:text-primary-fixed">MITS Gwalior</h1>
           </div>
           <div className="flex items-center gap-sm hidden md:flex">
             <nav className="flex gap-md mr-md">
-              <a className="flex items-center gap-xs text-primary dark:text-primary-fixed font-label-caps text-[12px] hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors px-sm py-xs rounded-md" href="/">
+              <a className="flex items-center gap-xs text-primary bg-primary/10 font-label-caps text-[12px] px-sm py-xs rounded-md font-bold" href="/">
                 <span className="material-symbols-outlined text-[16px]">public</span> Public
               </a>
-              <a className="flex items-center gap-xs text-on-surface-variant dark:text-on-surface-variant font-label-caps text-[12px] hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors px-sm py-xs rounded-md" href="/admin">
+              <a className="flex items-center gap-xs text-on-surface-variant font-label-caps text-[12px] hover:bg-surface-container-high transition-colors px-sm py-xs rounded-md" href="/admin">
                 <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span> Admin Login
               </a>
-              <a className="flex items-center gap-xs text-secondary font-label-caps text-[12px] hover:bg-surface-container-high transition-colors px-sm py-xs rounded-md" href="/profile">
+              <a className="flex items-center gap-xs text-on-surface-variant font-label-caps text-[12px] hover:bg-surface-container-high transition-colors px-sm py-xs rounded-md" href="/profile">
                 <span className="material-symbols-outlined text-[16px]">developer_mode</span> Developer
               </a>
             </nav>
-            <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant">
-                <span className="material-symbols-outlined text-[18px] text-on-surface-variant">developer_mode</span>
-            </div>
           </div>
           <div className="md:hidden flex gap-2 items-center">
-             <a href="/profile" className="text-xs px-2 py-1 bg-surface-container-high hover:bg-surface-container-highest text-secondary rounded-md transition-colors">Developer</a>
-             <a href="/admin" className="text-xs px-2 py-1 bg-surface-container-high hover:bg-surface-container-highest text-primary rounded-md transition-colors">Admin</a>
+             <a href="/" className="text-xs px-2 py-1 bg-primary/10 text-primary font-bold rounded-md transition-colors">Public</a>
+             <a href="/profile" className="text-xs px-2 py-1 hover:bg-surface-container-high text-on-surface-variant rounded-md transition-colors">Developer</a>
+             <a href="/admin" className="text-xs px-2 py-1 hover:bg-surface-container-high text-on-surface-variant rounded-md transition-colors">Admin</a>
           </div>
         </div>
       </header>
@@ -378,7 +376,7 @@ const PublicAnalytics = () => {
       {/* BottomNavBar (Mobile Only) */}
       <nav className="md:hidden bg-surface-container text-primary font-label-md fixed bottom-0 left-0 w-full flex justify-around items-center px-md pb-md pt-xs z-50 rounded-t-xl border-t border-outline-variant/30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
         <a className="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-lg py-xs transition-all duration-200 ease-in-out" href="/">
-          <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: "'FILL' 1" }}>public</span>
+          <img src="/mits.png" className="w-6 h-6 mb-1 object-contain" alt="MITS Logo" />
           <span className="font-label-caps text-[10px] font-semibold">Public</span>
         </a>
         <a className="flex flex-col items-center justify-center text-on-surface-variant p-xs hover:bg-surface-bright transition-all duration-200 ease-in-out" href="/admin">

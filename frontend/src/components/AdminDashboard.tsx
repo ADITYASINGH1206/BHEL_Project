@@ -149,21 +149,21 @@ const AdminDashboard = () => {
       {/* TopAppBar */}
       <header className="bg-surface w-full top-0 sticky border-b border-outline-variant shadow-sm flex justify-between items-center px-sm py-xs max-w-full z-40">
         <div className="flex items-center gap-sm">
-          <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance</span>
+          <img src="/mits.png" className="w-8 h-8 object-contain" alt="MITS Logo" />
           <span className="font-headline-md text-[24px] font-bold text-primary">MITS Gwalior</span>
         </div>
         <div className="flex items-center gap-sm hidden md:flex">
           <nav className="flex gap-md mr-md">
             <a className="flex items-center gap-xs text-on-surface-variant font-label-caps text-[12px] hover:bg-surface-container-high transition-colors px-sm py-xs rounded-md" href="/">
-              <span className="material-symbols-outlined text-[16px]">arrow_back</span> Back to Dashboard
+              <span className="material-symbols-outlined text-[16px]">public</span> Public
             </a>
-            <a className="flex items-center gap-xs text-primary font-label-caps text-[12px] hover:bg-surface-container-high transition-colors px-sm py-xs rounded-md" href="/admin">
-              <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span> Admin
+            <a className="flex items-center gap-xs text-primary bg-primary/10 font-label-caps text-[12px] px-sm py-xs rounded-md font-bold" href="/admin">
+              <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span> Admin Login
+            </a>
+            <a className="flex items-center gap-xs text-on-surface-variant font-label-caps text-[12px] hover:bg-surface-container-high transition-colors px-sm py-xs rounded-md" href="/profile">
+              <span className="material-symbols-outlined text-[16px]">developer_mode</span> Developer
             </a>
           </nav>
-          <div className="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant overflow-hidden">
-            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">person</span>
-          </div>
         </div>
       </header>
 

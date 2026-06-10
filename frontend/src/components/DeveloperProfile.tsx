@@ -11,13 +11,18 @@ const DeveloperProfile = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[120px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 blur-[120px] rounded-full pointer-events-none"></div>
 
-      <button
-        onClick={() => navigate('/')}
-        className="absolute top-md left-md md:top-lg md:left-lg flex items-center gap-xs text-on-surface-variant hover:text-primary transition-colors font-label-caps text-[12px] z-50 bg-surface/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-outline-variant/50"
-      >
-        <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-        Back
-      </button>
+      <nav className="absolute top-md md:top-lg flex gap-sm md:gap-md z-50 bg-surface/50 backdrop-blur-md px-4 py-2 rounded-full border border-outline-variant/50 shadow-sm items-center">
+        <a className="flex items-center gap-xs text-on-surface-variant font-label-caps text-[12px] hover:text-primary transition-colors px-sm py-xs" href="/">
+          <span className="material-symbols-outlined text-[16px]">public</span> <span className="hidden md:inline">Public</span>
+        </a>
+        <a className="flex items-center gap-xs text-on-surface-variant font-label-caps text-[12px] hover:text-primary transition-colors px-sm py-xs" href="/admin">
+          <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span> <span className="hidden md:inline">Admin Login</span>
+        </a>
+        <div className="w-[1px] h-[16px] bg-outline-variant/50 mx-1"></div>
+        <a className="flex items-center gap-xs text-primary font-label-caps text-[12px] bg-primary/10 rounded-full transition-colors px-sm py-xs font-bold" href="/profile">
+          <span className="material-symbols-outlined text-[16px]">developer_mode</span> <span className="hidden md:inline">Developer</span>
+        </a>
+      </nav>
 
       <main className="w-full max-w-[600px] flex flex-col items-center mt-12 md:mt-20 relative z-10 pb-xl">
 
