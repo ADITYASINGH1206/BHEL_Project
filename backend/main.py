@@ -1,7 +1,16 @@
 import os
 import sys
 import asyncio
+import warnings
 from pathlib import Path
+
+# --- ML Warning Suppression ---
+# Keep Hugging Face hub downloader quiet regarding symlinks
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+# Globally ignore non-critical deprecation and future warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+# ------------------------------
 from typing import List, Optional
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
@@ -71,6 +80,9 @@ class LoginRequest(BaseModel):
 # --- Helper Functions ---
 def get_google_sheet():
     credentials_file = BASE_DIR / "service-account.json"
+    if not credentials_file.exists():
+        credentials_file = Path("/etc/secrets/service-account.json")
+        
     if not credentials_file.exists():
         return None
     

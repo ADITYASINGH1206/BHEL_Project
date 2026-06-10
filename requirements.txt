@@ -10,3 +10,4 @@ webdriver-manager==4.0.1
 fastapi==0.110.0
 uvicorn==0.27.1
 python-dotenv==1.0.1
+sentencepiece==0.2.0

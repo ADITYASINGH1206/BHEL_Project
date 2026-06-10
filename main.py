@@ -1,7 +1,14 @@
 import argparse
 import os
 import sys
+import warnings
 from dotenv import load_dotenv
+
+# --- ML Warning Suppression ---
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+# ------------------------------
 
 # Ensure the root directory is in the path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

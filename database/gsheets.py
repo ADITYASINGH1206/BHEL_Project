@@ -21,6 +21,10 @@ class GoogleSheetsManager:
 
     def connect(self):
         try:
+            # Check Render Docker secrets path if local file doesn't exist
+            if not os.path.exists(self.credentials_file) and os.path.exists("/etc/secrets/service-account.json"):
+                self.credentials_file = "/etc/secrets/service-account.json"
+                
             if not os.path.exists(self.credentials_file):
                 print(f"Warning: {self.credentials_file} not found. Google Sheets integration disabled.")
                 return
