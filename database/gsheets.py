@@ -113,16 +113,29 @@ class GoogleSheetsManager:
             return
 
         try:
-            # 1. Update Master Sheet
+            # 1. Determine unified branch name with year
+            enrollment = data.get("Enrollment Number", "")
+            base_branch = data.get("Branch", "Unknown Branch")
+            
+            # Extract 2-digit year from enrollment (e.g., '24' from 'BTAD24O1001')
+            import re
+            year_match = re.search(r'\d{2}', enrollment)
+            if year_match:
+                unified_branch_name = f"{base_branch} - 20{year_match.group(0)}"
+            else:
+                unified_branch_name = base_branch
+                
+            # Update the data dictionary so the unified name is saved to the Master sheet
+            # This ensures the frontend dropdown matches the individual sheet name perfectly.
+            data["Branch"] = unified_branch_name
+
+            # 2. Update Master Sheet
             master_sheet = self._get_or_create_worksheet("Master")
             self._write_to_worksheet(master_sheet, data)
 
-            # 2. Update Prefix Sheet (e.g., BTAD24O instead of just BTAD)
-            enrollment = data.get("Enrollment Number", "")
-            if enrollment and len(enrollment) > 4:
-                prefix = enrollment[:-4]
-                branch_sheet = self._get_or_create_worksheet(prefix)
-                self._write_to_worksheet(branch_sheet, data)
+            # 3. Update Unified Branch Sheet
+            branch_sheet = self._get_or_create_worksheet(unified_branch_name)
+            self._write_to_worksheet(branch_sheet, data)
 
         except gspread.exceptions.APIError as e:
             if "RateLimitExceeded" in str(e):
