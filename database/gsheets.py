@@ -117,10 +117,11 @@ class GoogleSheetsManager:
             master_sheet = self._get_or_create_worksheet("Master")
             self._write_to_worksheet(master_sheet, data)
 
-            # 2. Update Branch Sheet
-            branch = data.get("Branch")
-            if branch:
-                branch_sheet = self._get_or_create_worksheet(branch)
+            # 2. Update Prefix Sheet (e.g., BTAD24O instead of just BTAD)
+            enrollment = data.get("Enrollment Number", "")
+            if enrollment and len(enrollment) > 4:
+                prefix = enrollment[:-4]
+                branch_sheet = self._get_or_create_worksheet(prefix)
                 self._write_to_worksheet(branch_sheet, data)
 
         except gspread.exceptions.APIError as e:

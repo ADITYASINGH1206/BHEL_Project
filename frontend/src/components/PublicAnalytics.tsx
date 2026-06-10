@@ -171,12 +171,16 @@ const PublicAnalytics = () => {
               <a className="flex items-center gap-xs text-on-surface-variant dark:text-on-surface-variant font-label-caps text-[12px] hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors px-sm py-xs rounded-md" href="/admin">
                 <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span> Admin Login
               </a>
+              <a className="flex items-center gap-xs text-secondary font-label-caps text-[12px] hover:bg-surface-container-high transition-colors px-sm py-xs rounded-md" href="/profile">
+                <span className="material-symbols-outlined text-[16px]">developer_mode</span> Developer
+              </a>
             </nav>
             <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant">
-              <span className="material-symbols-outlined text-on-surface-variant">person</span>
+                <span className="material-symbols-outlined text-[18px] text-on-surface-variant">developer_mode</span>
             </div>
           </div>
           <div className="md:hidden flex gap-2 items-center">
+             <a href="/profile" className="text-xs px-2 py-1 bg-surface-container-high hover:bg-surface-container-highest text-secondary rounded-md transition-colors">Developer</a>
              <a href="/admin" className="text-xs px-2 py-1 bg-surface-container-high hover:bg-surface-container-highest text-primary rounded-md transition-colors">Admin</a>
           </div>
         </div>
