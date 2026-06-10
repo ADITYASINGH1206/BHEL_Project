@@ -72,6 +72,9 @@ class LoginRequest(BaseModel):
 def get_google_sheet():
     credentials_file = BASE_DIR / "service-account.json"
     if not credentials_file.exists():
+        credentials_file = Path("/etc/secrets/service-account.json")
+        
+    if not credentials_file.exists():
         return None
     
     scope = [
