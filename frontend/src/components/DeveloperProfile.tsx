@@ -1,8 +1,4 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-
 const DeveloperProfile = () => {
-  const navigate = useNavigate();
 
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col items-center p-md md:p-xl font-body-md relative overflow-hidden">

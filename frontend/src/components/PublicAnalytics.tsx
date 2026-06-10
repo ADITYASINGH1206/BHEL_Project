@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 interface StudentData {
   enrollment: string;
@@ -112,22 +112,6 @@ const PublicAnalytics = () => {
       },
       maxVal
     };
-  }, [filteredData]);
-
-  // Compute SGPA Bar Chart Distribution
-  const sgpaDistribution = useMemo(() => {
-    const bins = { '< 6.0': 0, '6.0 - 6.99': 0, '7.0 - 7.99': 0, '8.0 - 8.99': 0, '9.0 - 10.0': 0 };
-    filteredData.forEach(student => {
-      if (student.sgpa < 6.0) bins['< 6.0']++;
-      else if (student.sgpa < 7.0) bins['6.0 - 6.99']++;
-      else if (student.sgpa < 8.0) bins['7.0 - 7.99']++;
-      else if (student.sgpa < 9.0) bins['8.0 - 8.99']++;
-      else bins['9.0 - 10.0']++;
-    });
-    return Object.keys(bins).map(key => ({
-      range: key,
-      students: bins[key as keyof typeof bins]
-    }));
   }, [filteredData]);
 
   // Scatter Chart Data for Individual Performance
