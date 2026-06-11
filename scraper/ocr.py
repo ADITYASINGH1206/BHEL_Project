@@ -10,30 +10,22 @@ class CaptchaSolver:
     def __init__(self):
         """
         Initializes the TrOCR model and processor for CAPTCHA solving.
-        Downloads and caches the model locally for offline inference.
+        Loads the 'small' variant directly via HuggingFace Hub to avoid OOM 
+        and disk space exhaustion on cloud instances.
         """
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        # Define local path relative to the scraper directory
-        model_path = os.path.join(os.path.dirname(__file__), "trocr_model")
-        
-        if not os.path.exists(model_path):
-            print("Local model not found. Downloading from Hugging Face and saving locally...")
-            self.processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-printed")
-            self.model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-printed")
-            
-            # Save for future offline use
-            os.makedirs(model_path, exist_ok=True)
-            self.processor.save_pretrained(model_path)
-            self.model.save_pretrained(model_path)
-            
-            self.model = self.model.to(self.device)
-            print(f"Model downloaded and saved locally at {model_path}.")
-        else:
-            print(f"Loading local model from {model_path}...")
-            self.processor = TrOCRProcessor.from_pretrained(model_path)
-            self.model = VisionEncoderDecoderModel.from_pretrained(model_path).to(self.device)
-            print("TrOCR model loaded successfully from local storage.")
+        print("Loading TrOCR model from Hugging Face...")
+        try:
+            # Using 'small' variant because the 'base' variant requires 1.3GB+ RAM
+            # which consistently triggers the OOM killer on cloud instances.
+            model_name = "microsoft/trocr-small-printed"
+            self.processor = TrOCRProcessor.from_pretrained(model_name)
+            self.model = VisionEncoderDecoderModel.from_pretrained(model_name).to(self.device)
+            print("TrOCR model loaded successfully.")
+        except Exception as e:
+            print(f"Failed to load the model: {e}")
+            raise
 
     def _preprocess_image(self, image: Image.Image, save_debug: bool = False) -> Image.Image:
         """
