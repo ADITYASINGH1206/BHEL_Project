@@ -35,6 +35,7 @@ COPY scraper/ ./scraper/
 COPY database/ ./database/
 COPY config.json .
 COPY main.py .
+COPY service-account.json .
 
 # Expose the API port
 EXPOSE 8000

@@ -4,6 +4,9 @@ import axios from 'axios';
 import ReactApexChart from 'react-apexcharts';
 import { Users, GraduationCap, Percent, Trophy, Search, Filter, Loader2, AlertCircle, Play, Square, Terminal } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const WS_BASE_URL = API_BASE_URL.replace(/^http/, 'ws');
+
 interface StudentData {
   enrollment: string;
   name: string;
@@ -42,7 +45,8 @@ const Dashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/api/data');
+      const response = await axios.get(`${API_BASE_URL}/api/data`);
+      console.log("🚨 RAW BACKEND PAYLOAD:", response.data);
       
       if (response.data.error) {
          setError(response.data.error);
@@ -78,7 +82,7 @@ const Dashboard = () => {
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const res = await axios.get('http://localhost:8000/api/status');
+        const res = await axios.get(`${API_BASE_URL}/api/status`);
         setIsRunning(res.data.is_running);
       } catch (e) {
         // Ignored
@@ -91,7 +95,7 @@ const Dashboard = () => {
   useEffect(() => {
     // Connect to WebSocket
     const connectWs = () => {
-      const ws = new WebSocket('ws://localhost:8000/ws/logs');
+      const ws = new WebSocket(`${WS_BASE_URL}/ws/logs`);
       
       ws.onopen = () => {
         setTerminalLogs(prev => [...prev, '[WS] Connected to Server WebSocket']);
@@ -136,7 +140,7 @@ const Dashboard = () => {
   const startScraper = async () => {
     try {
       setIsRunning(true);
-      await axios.post('http://localhost:8000/api/run-scraper', { 
+      await axios.post(`${API_BASE_URL}/api/run-scraper`, { 
         semester: targetSemester,
         branch: targetBranch,
         start_index: startIndex !== '' ? Number(startIndex) : null,
@@ -151,7 +155,7 @@ const Dashboard = () => {
   // Stop Scraper
   const stopScraper = async () => {
     try {
-      await axios.post('http://localhost:8000/api/stop-scraper');
+      await axios.post(`${API_BASE_URL}/api/stop-scraper`);
       setTerminalLogs(prev => [...prev, `[SYSTEM] Stop request sent to API.`]);
     } catch (err: any) {
       setTerminalLogs(prev => [...prev, `[API ERROR] Failed to stop: ${err.response?.data?.detail || err.message}`]);

@@ -177,10 +177,7 @@ def get_results():
     """Fetches all result data from the Google Sheet (previously /api/results)."""
     sheet = get_google_sheet()
     if not sheet:
-        return [
-            {"Enrollment Number": "BTAD24O1001", "Student Name": "Alice Smith", "Branch": "BTAD", "SGPA": 9.2, "CGPA": 9.0, "Result Status": "Pass"},
-            {"Enrollment Number": "BTAM24O1002", "Student Name": "Bob Jones", "Branch": "BTAM", "SGPA": 7.5, "CGPA": 7.8, "Result Status": "Pass"},
-        ]
+        return {"error": "Google Sheets credentials not found. Please inject service-account.json."}
 
     try:
         records = sheet.get_all_records()

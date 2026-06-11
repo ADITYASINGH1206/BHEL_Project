@@ -3,7 +3,7 @@ import io
 import base64
 import re
 from PIL import Image, ImageEnhance, ImageFilter
-from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel, logging
 import torch
 
 class CaptchaSolver:
@@ -16,6 +16,7 @@ class CaptchaSolver:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         print("Loading TrOCR model from Hugging Face...")
+        logging.set_verbosity_error()
         try:
             # Using 'small' variant because the 'base' variant requires 1.3GB+ RAM
             # which consistently triggers the OOM killer on cloud instances.

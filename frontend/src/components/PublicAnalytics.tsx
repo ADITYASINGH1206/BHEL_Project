@@ -40,6 +40,7 @@ const PublicAnalytics = () => {
       try {
         setLoading(true);
         const response = await axios.get(`${cleanApiBase}/api/data`);
+        console.log("🚨 RAW BACKEND PAYLOAD:", response.data);
         if (response.data.error) {
            setError(response.data.error);
            return;

@@ -45,11 +45,14 @@ class MitsScraper:
         # Cloud (Linux) vs Local (Windows/Mac) configuration
         if sys.platform.startswith('linux'):
             chrome_options.add_argument("--headless=new")
+            # Overwrite headless user-agent to bypass basic anti-bot detections
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             chrome_options.binary_location = "/usr/bin/chromium"
             service = Service("/usr/bin/chromedriver")
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
         else:
             chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             self.driver = webdriver.Chrome(options=chrome_options)
             
         self.wait = WebDriverWait(self.driver, 15)
@@ -107,9 +110,11 @@ class MitsScraper:
                 if attempt == 0:
                     self.driver.get(self.result_page_url)
                 
-                # Wait for elements individually to pinpoint the failure
+                # Strict explicit wait: Wait up to 10 seconds for the first element to physically appear
                 try:
-                    enrollment_input = self.wait.until(EC.presence_of_element_located((By.ID, "ContentPlaceHolder1_txtrollno")))
+                    enrollment_input = WebDriverWait(self.driver, 10).until(
+                        EC.visibility_of_element_located((By.ID, "ContentPlaceHolder1_txtrollno"))
+                    )
                 except TimeoutException:
                     self.logger.error(f"[{enrollment_number}] Timeout: Could not find Enrollment Input (ContentPlaceHolder1_txtrollno)")
                     continue
@@ -299,6 +304,8 @@ class MitsScraper:
 
             except Exception as e:
                 self.logger.error(f"[{enrollment_number}] Exception during scrape attempt {attempt + 1}: {e}")
+                # Hard pause before immediately firing the next attempt to prevent instant loop burning
+                time.sleep(2)
                 time.sleep(get_random_delay(3, 6))
 
         self.logger.error(f"[{enrollment_number}] Failed after {self.max_retries} retries.")
