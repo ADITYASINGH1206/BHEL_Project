@@ -15,18 +15,26 @@ class CaptchaSolver:
         """
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        print("Loading TrOCR model from Hugging Face...")
-        logging.set_verbosity_error()
-        try:
-            # Using 'small' variant because the 'base' variant requires 1.3GB+ RAM
-            # which consistently triggers the OOM killer on cloud instances.
-            model_name = "microsoft/trocr-small-printed"
-            self.processor = TrOCRProcessor.from_pretrained(model_name)
-            self.model = VisionEncoderDecoderModel.from_pretrained(model_name).to(self.device)
-            print("TrOCR model loaded successfully.")
-        except Exception as e:
-            print(f"Failed to load the model: {e}")
-            raise
+        # Define local path relative to the scraper directory
+        model_path = os.path.join(os.path.dirname(__file__), "trocr_model")
+        
+        if not os.path.exists(model_path):
+            print("Local model not found. Downloading from Hugging Face and saving locally...")
+            self.processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-printed")
+            self.model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-printed")
+            
+            # Save for future offline use
+            os.makedirs(model_path, exist_ok=True)
+            self.processor.save_pretrained(model_path)
+            self.model.save_pretrained(model_path)
+            
+            self.model = self.model.to(self.device)
+            print(f"Model downloaded and saved locally at {model_path}.")
+        else:
+            print(f"Loading local model from {model_path}...")
+            self.processor = TrOCRProcessor.from_pretrained(model_path)
+            self.model = VisionEncoderDecoderModel.from_pretrained(model_path).to(self.device)
+            print("TrOCR model loaded successfully from local storage.")
 
     def _preprocess_image(self, image: Image.Image, save_debug: bool = False) -> Image.Image:
         """
@@ -79,6 +87,7 @@ class CaptchaSolver:
             pixel_values = self.processor(images=processed_image, return_tensors="pt").pixel_values.to(self.device)
             generated_ids = self.model.generate(pixel_values, max_new_tokens=10)
             generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+            print(f"[DEBUG] AI Captcha Guess: {generated_text}")
             
             # Sanitize the output to remove any lingering punctuation or formatting artifacts
             cleaned_text = re.sub(r'[^a-zA-Z0-9]', '', generated_text).strip()
@@ -86,20 +95,8 @@ class CaptchaSolver:
             # 1. Enforce Uppercase
             cleaned_text = cleaned_text.upper()
             
-            # 2. Character Substitution (Confusion Matrix)
-            # Fix common TrOCR hallucinations on distorted characters
-            replacements = {
-                'O': '0',
-                'I': '1',
-                'L': '1',
-                'S': '5',
-                'Z': '2',
-                'G': '6',
-                'B': '8'
-            }
-            for old_char, new_char in replacements.items():
-                cleaned_text = cleaned_text.replace(old_char, new_char)
-                
+            # The TrOCR guess is used directly without aggressive substitution
+            
             # 3. Length Validation Check
             if len(cleaned_text) != 5:
                 # Return empty string to signal scraper to skip submission

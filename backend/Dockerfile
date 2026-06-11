@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
 # Set Working Directory
 WORKDIR /app
 
+ENV RUNNING_IN_DOCKER=true
 # Copy requirements from the root directory
 COPY requirements.txt .
 

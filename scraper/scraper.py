@@ -32,27 +32,30 @@ class MitsScraper:
         self._init_webdriver()
 
     def _init_webdriver(self):
-        import sys
+        IN_DOCKER = os.environ.get("RUNNING_IN_DOCKER") == "true"
         chrome_options = Options()
         
-        # Base arguments for stability and undetectability
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("window-size=1920,1080")
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        # Base universal options for stability and undetectability
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         
-        # Cloud (Linux) vs Local (Windows/Mac) configuration
-        if sys.platform.startswith('linux'):
+        # Aggressively strip down browser to save memory (DO NOT block images)
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_argument("--disable-dev-tools")
+        
+        # Context-aware configuration
+        if IN_DOCKER:
             chrome_options.add_argument("--headless=new")
-            # Overwrite headless user-agent to bypass basic anti-bot detections
-            chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
             chrome_options.binary_location = "/usr/bin/chromium"
             service = Service("/usr/bin/chromedriver")
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
         else:
-            chrome_options.add_argument("--headless")
-            chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            # Running headless now that debugging is complete
+            chrome_options.add_argument("--headless=new")
             self.driver = webdriver.Chrome(options=chrome_options)
             
         self.wait = WebDriverWait(self.driver, 15)
@@ -106,9 +109,8 @@ class MitsScraper:
         """
         for attempt in range(self.max_retries):
             try:
-                # Only load the page on the first attempt; subsequent attempts will use the refreshed DOM
-                if attempt == 0:
-                    self.driver.get(self.result_page_url)
+                # Always load the page to ensure a clean slate for every attempt
+                self.driver.get(self.result_page_url)
                 
                 # Strict explicit wait: Wait up to 10 seconds for the first element to physically appear
                 try:
@@ -126,16 +128,17 @@ class MitsScraper:
                     continue
                 
                 try:
-                    semester_dropdown = Select(self.driver.find_element(By.ID, "ContentPlaceHolder1_drpSemester"))
-                except NoSuchElementException:
-                    self.logger.error(f"[{enrollment_number}] Could not find Semester Dropdown (ContentPlaceHolder1_drpSemester)")
+                    drp_el = self.wait.until(EC.presence_of_element_located((By.ID, "ContentPlaceHolder1_drpSemester")))
+                    semester_dropdown = Select(drp_el)
+                except TimeoutException:
+                    self.logger.error(f"[{enrollment_number}] Timeout: Could not find Semester Dropdown")
                     continue
                 
                 try:
-                    submit_button = self.driver.find_element(By.ID, "ContentPlaceHolder1_btnviewresult")
-                    captcha_input = self.driver.find_element(By.ID, "ContentPlaceHolder1_TextBox1")
-                except NoSuchElementException:
-                    self.logger.error(f"[{enrollment_number}] Could not find Submit button or CAPTCHA input box.")
+                    submit_button = self.wait.until(EC.element_to_be_clickable((By.ID, "ContentPlaceHolder1_btnviewresult")))
+                    captcha_input = self.wait.until(EC.presence_of_element_located((By.ID, "ContentPlaceHolder1_TextBox1")))
+                except TimeoutException:
+                    self.logger.error(f"[{enrollment_number}] Timeout: Could not find Submit button or CAPTCHA input box.")
                     continue
                 
                 # Extract CAPTCHA image using JS (Handles both <canvas> and <img> tags)
@@ -179,7 +182,7 @@ class MitsScraper:
                 self.driver.execute_script("arguments[0].click();", captcha_input)
                 time.sleep(0.5)
                 self.driver.execute_script("arguments[0].value = '';", captcha_input)
-                captcha_input.send_keys(captcha_text)
+                captcha_input.send_keys(captcha_text.strip().upper())
                 
                 # Ensure frontend JS state catches up before submission
                 time.sleep(1.0)
@@ -187,6 +190,9 @@ class MitsScraper:
                 # Submit using JS to bypass overlays (ElementClickInterceptedException)
                 try:
                     self.driver.execute_script("arguments[0].click();", submit_button)
+                    
+                    # Wait so the browser stays open long enough to see what happens
+                    time.sleep(5)
                     
                     # Wait up to 1.5 seconds for a potential alert to appear
                     WebDriverWait(self.driver, 1.5).until(EC.alert_is_present())
@@ -315,29 +321,31 @@ class MitsScraper:
         """
         Main execution loop.
         """
-        if not self.initialize_session():
-            self.logger.error("Could not initialize session. Aborting run.")
-            self.driver.quit()
-            return
+        try:
+            if not self.initialize_session():
+                self.logger.error("Could not initialize session. Aborting run.")
+                return
 
-        batches = get_enrollment_batches(self.config)
-        for branch_name, enrollments in batches.items():
-            self.logger.info(f"Starting batch for branch: {branch_name} ({len(enrollments)} records)")
-            
-            existing_records = self.gsheets.get_existing_enrollments()
-            
-            for enrollment in enrollments:
-                if enrollment in existing_records:
-                    self.logger.info(f"[{enrollment}] Already in Google Sheets. Skipping...")
-                    continue
-                    
-                self.scrape_student(enrollment, branch_name)
+            batches = get_enrollment_batches(self.config)
+            for branch_name, enrollments in batches.items():
+                self.logger.info(f"Starting batch for branch: {branch_name} ({len(enrollments)} records)")
                 
-                # Rate limit between successful/unsuccessful requests
-                time.sleep(get_random_delay())
+                existing_records = self.gsheets.get_existing_enrollments()
+                
+                for enrollment in enrollments:
+                    if enrollment in existing_records:
+                        self.logger.info(f"[{enrollment}] Already in Google Sheets. Skipping...")
+                        continue
+                        
+                    self.scrape_student(enrollment, branch_name)
+                    
+                    # Rate limit between successful/unsuccessful requests
+                    time.sleep(get_random_delay())
 
-        self.driver.quit()
-        self.logger.info("Scraping completed.")
+            self.logger.info("Scraping completed.")
+        finally:
+            self.logger.info("Cleaning up resources: Terminating browser process.")
+            self.driver.quit()
 
 if __name__ == "__main__":
     scraper = MitsScraper()
