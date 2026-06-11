@@ -1,23 +1,21 @@
 # /backend/Dockerfile
-# Note: This MUST be built from the root context of the repository to access all modules
+# Built from the root context of the repository to access all modules
 
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 # Set environment variables to prevent Python from writing .pyc files
 # and to ensure stdout/stderr are unbuffered.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Install required system dependencies for Chrome and ChromeDriver
+# Install chromium, chromium-driver, and required networking tools
 RUN apt-get update && apt-get install -y \
+    chromium \
+    chromium-driver \
     wget \
+    curl \
+    unzip \
     gnupg2 \
-    apt-transport-https \
-    ca-certificates \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

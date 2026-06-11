@@ -32,16 +32,26 @@ class MitsScraper:
         self._init_webdriver()
 
     def _init_webdriver(self):
+        import sys
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
+        
+        # Base arguments for stability and undetectability
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        
-        # User-agent spoofing to avoid basic blocks
+        chrome_options.add_argument("window-size=1920,1080")
         chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
-        self.driver = webdriver.Chrome(options=chrome_options)
+        # Cloud (Linux) vs Local (Windows/Mac) configuration
+        if sys.platform.startswith('linux'):
+            chrome_options.add_argument("--headless=new")
+            chrome_options.binary_location = "/usr/bin/chromium"
+            service = Service("/usr/bin/chromedriver")
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+        else:
+            chrome_options.add_argument("--headless")
+            self.driver = webdriver.Chrome(options=chrome_options)
+            
         self.wait = WebDriverWait(self.driver, 15)
 
     def initialize_session(self):
